@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 數據分析儀表板</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="header-title">AI 數據分析儀表板</h1>
+            <p class="header-subtitle">上傳 CSV、連接 GA4，並使用 AI 獲得深度洞察</p>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="container">
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="upload">文件上傳</button>
+            <button class="nav-tab" data-tab="ai">
+                <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                AI 分析
+            </button>
+            <button class="nav-tab" data-tab="analysis">數據視覺化</button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="container">
+        <!-- File Upload Tab -->
+        <div id="upload-tab" class="tab-content active">
+            <div class="upload-grid">
+                <!-- CSV Upload Component -->
+                <div class="upload-card">
+                    <h2 class="card-title">CSV / TXT 文件上傳</h2>
+                    <div class="dropzone" id="csv-dropzone">
+                        <div class="dropzone-content">
+                            <svg class="dropzone-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <p class="dropzone-text">拖拽 CSV 或 TXT 文件到此處，或</p>
+                            <p class="dropzone-link">點擊選擇文件</p>
+                            <p class="dropzone-support">支援 .csv, .txt 格式</p>
+                        </div>
+                        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;">
+                    </div>
+                    <div id="csv-loading" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>處理中...</span>
+                    </div>
+                    <div id="csv-error" class="error-message" style="display: none;"></div>
+                    <div id="csv-preview" class="file-preview" style="display: none;"></div>
+                    <div class="format-info">
+                        <h3>📋 支援的文件格式</h3>
+                        <div class="format-details">
+                            <div><strong>CSV 文件：</strong>逗號分隔的表格數據，第一行作為欄位標題</div>
+                            <div><strong>TXT 文件：</strong>自動偵測分隔符（逗號、分號、Tab），支援結構化文本數據</div>
+                            <div class="format-tip">
+                                💡 <strong>提示：</strong>TXT 文件請確保數據格式整齊，每行包含相同數量的欄位
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GA4 Upload Component -->
+                <div class="upload-card">
+                    <h2 class="card-title">GA4 截圖上傳</h2>
+                    <div class="dropzone" id="ga4-dropzone">
+                        <div class="dropzone-content">
+                            <svg class="dropzone-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="dropzone-text">拖拽 GA4 截圖到此處，或</p>
+                            <p class="dropzone-link">點擊選擇圖片</p>
+                            <p class="dropzone-support">支援 PNG, JPG, GIF, WebP 格式</p>
+                        </div>
+                        <input type="file" id="ga4-file-input" accept="image/*" style="display: none;">
+                    </div>
+                    <div id="ga4-loading" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>分析圖片中...</span>
+                    </div>
+                    <div id="ga4-error" class="error-message" style="display: none;"></div>
+                    <div id="ga4-preview" class="file-preview" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analysis Tab -->
+        <div id="ai-tab" class="tab-content">
+            <div class="upload-card">
+                <div class="card-header">
+                    <h2 class="card-title">AI 增強分析</h2>
+                    <span id="ai-connection-status" class="connection-status" style="display: none;">
+                        <svg class="status-icon" viewBox="0 0 8 8" fill="currentColor">
+                            <circle cx="4" cy="4" r="3"/>
+                        </svg>
+                        AI 已連接
+                    </span>
+                </div>
+
+                <div id="ai-connection-form" class="ai-form">
+                    <!-- API Provider Selection -->
+                    <div class="form-group">
+                        <label class="form-label">選擇 AI 服務提供商</label>
+                        <div class="radio-group">
+                            <label class="radio-item">
+                                <input type="radio" name="provider" value="google" checked>
+                                <span>Google AI Studio</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="provider" value="openai">
+                                <span>OpenAI</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- API Key Input -->
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" id="api-key-input" class="form-input" placeholder="請輸入您的 API Key">
+                        <p class="form-help">從相應平台獲取免費或付費 API Key</p>
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div class="form-group">
+                        <label class="form-label">主要關注領域</label>
+                        <select id="category-select" class="form-select">
+                            <option value="">選擇關注領域...</option>
+                            <option value="conversion">轉換率優化</option>
+                            <option value="traffic">流量成長</option>
+                            <option value="engagement">用戶參與度</option>
+                            <option value="retention">用戶留存</option>
+                            <option value="revenue">營收提升</option>
+                            <option value="seo">SEO 搜尋優化</option>
+                            <option value="mobile">行動端體驗</option>
+                            <option value="social">社群媒體</option>
+                        </select>
+                    </div>
+
+                    <!-- Pain Points Input -->
+                    <div class="form-group">
+                        <label class="form-label">描述您的具體痛點或目標 <span class="required">*</span></label>
+                        <textarea id="pain-points-input" class="form-textarea" rows="4" placeholder="例如：我的網站轉換率很低，只有1.2%，特別是產品頁面的用戶經常瀏覽後就離開，希望了解如何提升購買轉換..."></textarea>
+                        <p class="form-help">請詳細描述您遇到的問題、目前的困擾或希望達成的目標，AI 將基於您的需求提供客製化建議</p>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <h3>🤖 AI 顧問功能:</h3>
+                        <ul>
+                            <li>• <strong>問題診斷：</strong>基於網站數據分析您的痛點根源</li>
+                            <li>• <strong>客製化建議：</strong>針對您的具體需求提供解決方案</li>
+                            <li>• <strong>行動計劃：</strong>提供具體可執行的優化步驟</li>
+                            <li>• <strong>效果預估：</strong>預測改善措施的潛在影響</li>
+                            <li>• <strong>持續追蹤：</strong>建議需要監控的關鍵指標</li>
+                        </ul>
+                    </div>
+
+                    <button id="connect-ai-btn" class="btn-primary full-width">
+                        🤖 開始 AI 分析
+                    </button>
+                </div>
+
+                <div id="ai-results" class="ai-results" style="display: none;">
+                    <div class="ai-metrics" id="ai-metrics"></div>
+                    <div class="ai-insights" id="ai-insights"></div>
+                    <button id="disconnect-ai-btn" class="btn-secondary full-width">中斷連接</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Visualization Tab -->
+        <div id="analysis-tab" class="tab-content">
+            <div id="no-data-message" class="no-data">
+                <svg class="no-data-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <h3>沒有數據可供分析</h3>
+                <p>請先上傳 CSV 文件或連接 GA4 來開始數據分析</p>
+            </div>
+
+            <!-- GA4 Data Analysis -->
+            <div id="ga4-analysis" class="analysis-section" style="display: none;">
+                <h2 class="section-title">GA4 數據分析</h2>
+                <div id="ga4-metrics-cards" class="metrics-cards"></div>
+                <div id="ga4-charts" class="charts-container"></div>
+            </div>
+
+            <!-- CSV Data Analysis -->
+            <div id="csv-analysis" class="analysis-section" style="display: none;">
+                <h2 class="section-title">CSV 數據分析</h2>
+                <div id="csv-metrics-cards" class="metrics-cards"></div>
+                <div id="csv-charts" class="charts-container"></div>
+                <div id="csv-table" class="data-table-container"></div>
+            </div>
+
+            <!-- Analysis Recommendations -->
+            <div id="analysis-recommendations" class="analysis-section" style="display: none;">
+                <h2 class="section-title">分析建議</h2>
+                <div id="recommendations-content" class="recommendations"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
